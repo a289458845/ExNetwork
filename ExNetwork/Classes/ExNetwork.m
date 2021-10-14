@@ -8,7 +8,6 @@
 
 #import "ExNetwork.h"
 #import <AFNetworking/AFNetworking.h>
-//#import <ExCheckCar/ExProgressHUD.h>
 @implementation ExNetwork
 static ExNetwork * _instanceType = nil;
 
@@ -16,9 +15,9 @@ static ExNetwork * _instanceType = nil;
 {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        _instanceType = [ExNetwork manager];
-        NSURL *url = [NSURL URLWithString:baseUrl];
-        _instanceType = [_instanceType initWithBaseURL:url];
+        _instanceType = [[ExNetwork alloc]init];
+//        NSURL *url = [NSURL URLWithString:baseUrl];
+//        _instanceType = [_instanceType initWithBaseURL:url];
     });
     _instanceType.requestSerializer = [AFJSONRequestSerializer serializer];
     _instanceType.requestSerializer.HTTPShouldHandleCookies = YES;
@@ -26,7 +25,6 @@ static ExNetwork * _instanceType = nil;
     _instanceType.responseSerializer = [AFJSONResponseSerializer serializer];
     _instanceType.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json", @"text/json", @"text/javascript",@"text/html",nil];
 }
-
 + (instancetype)sharedManager{
     return _instanceType;
 }
@@ -45,7 +43,7 @@ static ExNetwork * _instanceType = nil;
            url = urlStr;
        }else
        {
-           url = [NSString stringWithFormat:@"%@%@",self.baseURL,urlStr];
+           url = [NSString stringWithFormat:@"%@%@",self.apiUrl,urlStr];
        }
     
     [self GET:url parameters:parameters success:^(NSURLSessionDataTask * _Nonnull task, id  _Nonnull responseObject) {
@@ -82,7 +80,7 @@ static ExNetwork * _instanceType = nil;
         url = urlStr;
     }else
     {
-        url = [NSString stringWithFormat:@"%@%@",self.baseURL,urlStr];
+        url = [NSString stringWithFormat:@"%@%@",self.apiUrl,urlStr];
     }
     [self POST:url parameters:parameters success:^(NSURLSessionDataTask * _Nonnull task, id  _Nonnull responseObject) {
         NSDictionary *dict = [self processDictionaryIsNSNull:responseObject];
@@ -97,6 +95,36 @@ static ExNetwork * _instanceType = nil;
         }
     }];
 }
+
+- (void)PostUrlString:(NSString *_Nullable)urlStr
+           array:(id)parameters
+              success:(void(^_Nullable)(id _Nullable responseObject))success
+              failure:(void(^_Nullable)(NSError * _Nonnull error))failure
+{
+    [self monitoringNetWorkStatus];
+    [self.requestSerializer setValue:self.token forHTTPHeaderField:@"token"];
+   NSString * url;
+   if ([urlStr hasPrefix:@"http"] || [urlStr hasPrefix:@"https"]) {
+       url = urlStr;
+   }else
+   {
+       url = [NSString stringWithFormat:@"%@%@",self.apiUrl,urlStr];
+   }
+    [self POST:url parameters:parameters success:^(NSURLSessionDataTask * _Nonnull task, id  _Nonnull responseObject) {
+        NSDictionary *dict = [self processDictionaryIsNSNull:responseObject];
+//        NSLog(@"%@----%@",task.currentRequest,[dict dictionaryToJsonString]);
+        if (success) {
+            success(dict);
+        }
+    } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+        if (failure) {
+            failure(error);
+            NSLog(@"error----%@",error);
+        }
+    }];
+}
+
+
 - (void)PostUrlString:(NSString *)urlStr
 AppendToUrlSuffix:(NSDictionary *)parameters
    success:(void (^)(id _Nullable))success
@@ -115,7 +143,7 @@ AppendToUrlSuffix:(NSDictionary *)parameters
             [temp addObject:[NSString stringWithFormat:@"%@=%@", key, obj]];
         }];
       NSString * suffixValue = [temp componentsJoinedByString:@"&"];
-    NSString * url = [[NSString stringWithFormat:@"%@%@?%@",self.baseURL,urlStr,suffixValue]stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    NSString * url = [[NSString stringWithFormat:@"%@%@?%@",self.apiUrl,urlStr,suffixValue]stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     
     [self POST:url parameters:nil success:^(NSURLSessionDataTask * _Nonnull task, id  _Nonnull responseObject) {
         NSDictionary *dict = [self processDictionaryIsNSNull:responseObject];
@@ -181,7 +209,7 @@ AppendToUrlSuffix:(NSDictionary *)parameters
            url = urlStr;
        }else
        {
-           url = [NSString stringWithFormat:@"%@%@",self.baseURL,urlStr];
+           url = [NSString stringWithFormat:@"%@%@",self.apiUrl,urlStr];
        }
     
     [self POST:url parameters:parameters constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {

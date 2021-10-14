@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)initNetwork:(NSString *)baseUrl;
 
 
+@property(nonatomic,copy)NSString * apiUrl;
+
 + (instancetype)sharedManager;
 
 @property(nonatomic,copy)NSString * token;
@@ -41,6 +43,11 @@ imageArray:(NSArray *)imageArray
 AppendToUrlSuffix:(NSDictionary *)parameters
    success:(void (^)(id _Nullable))success
                   failure:(void (^)(NSError * _Nonnull))failure;
+
+- (void)PostUrlString:(NSString *_Nullable)urlStr
+           array:(id)parameters
+              success:(void(^_Nullable)(id _Nullable responseObject))success
+              failure:(void(^_Nullable)(NSError * _Nonnull error))failure;
 @end
 
 NS_ASSUME_NONNULL_END
